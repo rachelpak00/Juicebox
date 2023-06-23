@@ -8,6 +8,7 @@ const {
   getAllPosts,
   updatePost,
   getPostById,
+  deletePostFromDB
 } = require('../db');
 
 postsRouter.get('/', async (req, res, next) => {
@@ -46,6 +47,7 @@ postsRouter.post('/', requireUser, async (req, res, next) => {
     postData.authorId = req.user.id;
     postData.title = title;
     postData.content = content;
+    postData.tags = tags;
 
     const post = await createPost(postData);
 
@@ -98,7 +100,27 @@ postsRouter.patch('/:postId', requireUser, async (req, res, next) => {
 });
 
 postsRouter.delete('/:postId', requireUser, async (req, res, next) => {
-  res.send({ message: 'under construction' });
-});
+  try {
+    const {postId} = req.params;
+
+    if (!postId){
+      res.send('You need to send along a post Id to this route')
+    } else {
+
+      const deletedPost = await deletePostFromDB(postId);
+
+      if (deletedPost) {
+        res.send(deletedPost);            
+      } else {
+        next({ 
+          name: "ErrorWithDeletingPost", 
+          message: `An error occurred when attempting to delete the post with an Id of ${postId}`,
+        });
+      }}
+    } catch ({ name, message}) {
+      next ({ name, message});
+    }
+  });
+
 
 module.exports = postsRouter;
